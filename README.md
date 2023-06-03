@@ -6,7 +6,7 @@ This project focuses on conducting analysis of Spotify songs and artists using g
 
 The project is organized into multiple folders, each corresponding to a specific lab:
 
-- **Lab 1:** Analysis of ...  (Folder: `lab1`)
+- **Lab 1:** Analysis of ...  (Folder: `Lab 1`)
 - **Lab 2:** 
 - **Lab 3:** 
 - **Lab 4:** 
