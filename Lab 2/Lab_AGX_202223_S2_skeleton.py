@@ -144,30 +144,29 @@ def create_similarity_graph(artist_audio_features_df: pd.DataFrame, similarity: 
 
 if __name__ == "__main__":
 
-    gB = nx.read_graphml("gb.graphml")
-    gD = nx.read_graphml("gD.graphml")
+    gB = nx.read_graphml("Lab 1/g_gB.graphml")
+    gD = nx.read_graphml("Lab 1/g_gD.graphml")
 
-    gB_prime = retrieve_bidirectional_edges(gB, out_filename="gB_prime.graphml")
-    gD_prime = retrieve_bidirectional_edges(gD, out_filename="gD_prime.graphml")
+    gB_prime = retrieve_bidirectional_edges(gB, out_filename="Lab 2/g_gB_prime.graphml")
+    gD_prime = retrieve_bidirectional_edges(gD, out_filename="Lab 2/g_gD_prime.graphml")
     
-    tracks_df = pd.read_csv('top_artists_tracks.csv')
+    tracks_df = pd.read_csv('Lab 1/D.csv')
     artist_audio_features_df = compute_mean_audio_features(tracks_df)
-    similarity_graph = create_similarity_graph(artist_audio_features_df= artist_audio_features_df, similarity= "cosine", out_filename= None) 
-    g_pruned = prune_low_weight_edges(similarity_graph, min_weight=0.5, out_filename="g_pruned.graphml")
 
-    #
+    similarity_graph = create_similarity_graph(artist_audio_features_df= artist_audio_features_df, similarity= "cosine", out_filename= None) 
+    g_pruned = prune_low_weight_edges(similarity_graph, min_weight=0.5, out_filename="Lab 2/g_pruned.graphml")
+
     gB_prime_order = gB_prime.order()
     gB_prime_size = gB_prime.size()
 
     gD_prime_order = gD_prime.order()
     gD_prime_size = gD_prime.size()
 
+
     print("Order and Size of the Undirected Graphs:")
     print("g'B: Order =", gB_prime_order, " Size =", gB_prime_size)
     print("g'D: Order =", gD_prime_order, " Size =", gD_prime_size)
 
-    #Needs to be done
-    
 
 
 
