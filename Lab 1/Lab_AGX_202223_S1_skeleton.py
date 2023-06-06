@@ -39,49 +39,35 @@ def crawler(seed: str, max_nodes_to_crawl: int, strategy: str = "BFS", out_filen
     
     current_seed = seed
     crawled = [] 
+    tocrawl = []
     
-    #first crawl
-    found = sp.artist_related_artists(current_seed)
-    crawled.append(current_seed)
-
-    found_ids = [art["id"] for art in found["artists"]] #get found artists ids
-    not_crawled = [id for id in found_ids if id not in crawled]
-    tocrawl = not_crawled
-
     while len(G.nodes()) < max_nodes_to_crawl:
-
         #sleep one second to be polite to the spotify API.
         time.sleep(1)
-
-        node_pairs = [(current_seed,id) for id in found_ids]  #create node pairs with current crawled node
-        G.add_edges_from(node_pairs) #add found edges and new nodes to graph
-
-        if strategy == "DFS":
-            #tocrawl = not_crawled #this filters already crawled nodes
-            current_seed = not_crawled[0]
-
-        elif strategy == "BFS":
-            if len(tocrawl) == 0:
-                tocrawl = not_crawled#this filters already crawled nodes
-            
-            current_seed = tocrawl[0]
-            tocrawl.remove(tocrawl[0])
-
-     
-        #crawl next node
+        
+        #first crawl
+        print("Crawling: ",current_seed)
         found = sp.artist_related_artists(current_seed)
         crawled.append(current_seed)
         found_ids = [art["id"] for art in found["artists"]] #get found artists ids
         not_crawled = [id for id in found_ids if id not in crawled]
         
-        if len(not_crawled) == 0: #if all found ids are already crawled
-            print("All nodes crawled! Looking for a new one")
-            while len(not_crawled) == 0:
-                found = sp.artist_related_artists(current_seed)
-                crawled.append(current_seed)
-                found_ids = [art["id"] for art in found["artists"]] #get found artists ids
-                not_crawled = [id for id in found_ids if id not in crawled]
+        if strategy == "DFS":
+            tocrawl = tocrawl + not_crawled #add new nodes to tocrawl pile mantaining DFS priority
             
+        elif strategy == "BFS":            
+            tocrawl = not_crawled + tocrawl #add new nodes to tocrawl pile mantaining BFS priority
+        
+        #Add edges to graph:
+        node_pairs = [(current_seed,id) for id in found_ids]  #create node pairs with current crawled node
+        G.add_edges_from(node_pairs) #add found edges and new nodes to graph
+
+        current_seed = not_crawled[0]
+        tocrawl.remove(tocrawl[0])
+        while current_seed in crawled: #in case the node we are about to crawl has aleady been crawled
+            print("Node already crawled, next...")
+            current_seed = not_crawled[0]
+            tocrawl.remove(tocrawl[0])
     
     #save graph to file
     nx.write_graphml(G,out_filename)
@@ -166,7 +152,7 @@ if __name__ == "__main__":
     client_id=CLIENT_ID ,
     client_secret=CLIENT_SECRET)
     sp = spotipy.Spotify(auth_manager=auth_manager)
-    """
+
     print("4. (1 point) Using the previous functions, obtain:")
     print("(a) A graph of related artists starting with the artist Drake and exploring 200 artists with BFS (we will call this graph gB).")
     id = search_artist("Drake")
@@ -187,7 +173,7 @@ if __name__ == "__main__":
     print("(c) A dataset of songs from all the explored artists that appear in any of the previous graphs (we will call this dataset D).")
     D = get_track_data([gB,gD], "D.csv")
     print(D)
-    """
+
     print("(d) A graph of related artists starting with the artist French Montana and exploring 200 artists with BFS (we will call this graph hB).")
     id = search_artist("French Montana")
     hB, last_cralwed = crawler(id, max_nodes_to_crawl=200, strategy= "BFS", out_filename= "g_hB.graphml",return_last_cr=True)
