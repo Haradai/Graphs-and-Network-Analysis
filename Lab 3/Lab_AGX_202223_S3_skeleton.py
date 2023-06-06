@@ -1,5 +1,6 @@
 import networkx as nx
 import networkx as nx
+import csv
 
 def num_common_nodes(*args):
     """
@@ -108,6 +109,82 @@ def detect_communities(g: nx.Graph, method: str, **kwargs) -> tuple:
 
 
 if __name__ == '__main__':
-    # ------- IMPLEMENT HERE THE MAIN FOR THIS SESSION ------- #
-    pass
-    # ------------------- END OF MAIN ------------------------ #
+    
+    #QUESTION 1
+    gB = nx.read_graphml("Lab 1/g_gB.graphml")
+    hB = nx.read_graphml("Lab 1/g_hB.graphml")
+    #fB = nx.read_graphml("Lab 1/g_fB.graphml")
+
+    common_nodes_hB = num_common_nodes(gB,hB)
+    print("Common nodes (gB and hB):", common_nodes_hB)
+
+    #common_nodes_fB= num_common_nodes(gB,fB)
+    #print("Common nodes (gB and fB):", common_nodes_fB)
+
+    #QUESTION 2
+    gB_prime = nx.read_graphml("Lab 2/g_gB_prime.graphml")
+    gD_prime = nx.read_graphml("Lab 2/g_gD_prime.graphml")
+
+    degree = get_k_most_central(gB_prime, "degree", 25)
+    betweeness = get_k_most_central(gB_prime, "betweenness", 25)
+    common_elements = set(degree).intersection(betweeness)
+
+    print("Common nodes using different centralities:",len(common_elements))
+
+    #QUESTION 3
+    cliques_gB, nodes_gB = find_cliques(gB_prime, 3)
+    print("Number of cliques in gB:",len(cliques_gB), ", min_size_clique: 3")
+
+    cliques_gD, nodes_gD = find_cliques(gD_prime, 10)
+    print("Number of cliques in gD:",len(cliques_gB), ", min_size_clique: 10")
+
+    common_nodes = set(nodes_gB).intersection(set(nodes_gD))
+    num_common_nodes = len(common_nodes)
+    print("Total number of common nodes:", num_common_nodes, ", Number of total nodes:", len(nodes_gD) + len(nodes_gB))
+
+    #QUESTION 4
+    largest_clique_gD = max(cliques_gD, key=len)
+    characteristics = []
+    
+    print(largest_clique_gD)
+    with open("Lab 2/mean_audio_features.csv", "r") as csvfile:
+        features = csv.DictReader(csvfile)
+    
+        for row in features:
+            artist_id = row["Artist_id"]
+            
+            if artist_id in largest_clique_gD:
+                characteristics.append(row)
+
+    print(characteristics)
+
+    #QUESTION 5
+    gD = nx.read_graphml("Lab 1/g_gD.graphml")
+    gD_communities, gD_modularity = detect_communities(gD, method='louvain')
+
+    print("Using the louvian:")
+    print("Communities:", len(gD_communities))
+    print("Modularity:", gD_modularity)
+
+    gD_communities, gD_modularity = detect_communities(gD, method='girvan-newman')
+
+    print("Using the girvan-newman:")
+    print("Communities:", len(gD_communities))
+    print("Modularity:", gD_modularity)
+
+    #QUESTION 6
+
+    num_artists_gB = len(gB.nodes())
+    num_artists_gD = len(gD.nodes())
+
+    cost_per_artist = 100
+
+    minimum_cost_gB = num_artists_gB * cost_per_artist
+    minimum_cost_gD = num_artists_gD * cost_per_artist
+
+    print("Minimum cost for gB:", minimum_cost_gB, "euros")
+    print("Minimum cost for gD:", minimum_cost_gD, "euros")
+
+    #TODO: Second part
+    #QUESTION 7
+
