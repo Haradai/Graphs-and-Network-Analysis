@@ -8,7 +8,12 @@ import time
 
 # ------- IMPLEMENT HERE ANY AUXILIARY FUNCTIONS NEEDED ------- #
 def print_graf_measures(g):
-    print(f"order: {g.order()}  size: {g.size()}  indegree: {np.mean([d for id,d in g.in_degree()])}  outdegree: {np.mean([d for id,d in g.out_degree()])}")
+    indegrees = [d for id,d in g.in_degree()]
+    outdegrees = [d for id,d in g.out_degree()]
+
+    print(f"order: {g.order()}  size: {g.size()}")
+    print(f"indegree: median[{np.median(indegrees)}], max[{np.max(indegrees)}],  min[{np.min(indegrees)}]")
+    print(f"outdegree: median[{np.median(outdegrees)}], max[{np.max(outdegrees)}],  min[{np.min(outdegrees)}]")
 # --------------- END OF AUXILIARY FUNCTIONS ------------------ #
 
 
@@ -40,34 +45,41 @@ def crawler(seed: str, max_nodes_to_crawl: int, strategy: str = "BFS", out_filen
     current_seed = seed
     crawled = [] 
     tocrawl = []
+    tocrawl_aux = []
     
+    #cnt = 0
     while len(G.nodes()) < max_nodes_to_crawl:
+        #cnt += 1
         #sleep one second to be polite to the spotify API.
         time.sleep(1)
+        #print(tocrawl_aux)
         
         #first crawl
-        print("Crawling: ",current_seed)
+        #print("Crawling: ",current_seed)
         found = sp.artist_related_artists(current_seed)
         crawled.append(current_seed)
         found_ids = [art["id"] for art in found["artists"]] #get found artists ids
-        not_crawled = [id for id in found_ids if id not in crawled]
-        
-        if strategy == "DFS":
-            tocrawl = tocrawl + not_crawled #add new nodes to tocrawl pile mantaining DFS priority
-            
-        elif strategy == "BFS":            
-            tocrawl = not_crawled + tocrawl #add new nodes to tocrawl pile mantaining BFS priority
-        
+        #not_crawled = [id for id in found_ids if id not in crawled]
         #Add edges to graph:
         node_pairs = [(current_seed,id) for id in found_ids]  #create node pairs with current crawled node
         G.add_edges_from(node_pairs) #add found edges and new nodes to graph
+        
+        if strategy == "BFS":
+            tocrawl = tocrawl + found_ids #add new nodes to tocrawl pile mantaining BFS priority
+            #tocrawl_aux += [cnt]*len(not_crawled)
+            
+        elif strategy == "DFS":            
+            tocrawl = found_ids + tocrawl #add new nodes to tocrawl pile mantaining DFS priority
+            #tocrawl_aux  = [cnt]*len(not_crawled) + tocrawl_aux
 
-        current_seed = not_crawled[0]
-        tocrawl.remove(tocrawl[0])
+        current_seed = tocrawl[0]
+        tocrawl = tocrawl[1:]
+        #tocrawl_aux.remove(tocrawl_aux[0])
         while current_seed in crawled: #in case the node we are about to crawl has aleady been crawled
-            print("Node already crawled, next...")
-            current_seed = not_crawled[0]
-            tocrawl.remove(tocrawl[0])
+            #print("Node already crawled, next...")
+            current_seed = tocrawl[0]
+            tocrawl = tocrawl[1:]
+            #tocrawl_aux.remove(tocrawl_aux[0])
     
     #save graph to file
     nx.write_graphml(G,out_filename)
@@ -94,8 +106,11 @@ def get_track_data(graphs: list, out_filename: str) -> pd.DataFrame:
     data = []
     seen_artist_ids = set()
     for graph in graphs:
-        for artist_id in graph.nodes:
-            if artist_id  in seen_artist_ids:
+        for artist_id,out_degree in graph.out_degree():
+
+            #to not to repeat artists we check if we have already seen it
+            #also check if the artist was discovered or crawled. If wasn't crawled oud_degree <1 then just ignore it
+            if artist_id  in seen_artist_ids and out_degree<1:
                 continue #go to next id
             
             artist = sp.artist(artist_id)
