@@ -103,6 +103,8 @@ def compute_mean_audio_features(tracks_df: pd.DataFrame) -> pd.DataFrame:
 
     return artist_df
 
+#TODO: Check function!
+
 def create_similarity_graph(artist_audio_features_df: pd.DataFrame, similarity: str, out_filename: str = None) -> nx.Graph:
     """
     Create a similarity graph from a dataframe with mean audio features per artist.
