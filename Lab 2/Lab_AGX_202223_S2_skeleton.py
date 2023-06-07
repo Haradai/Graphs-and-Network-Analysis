@@ -156,7 +156,7 @@ if __name__ == "__main__":
     artist_audio_features_df = compute_mean_audio_features(tracks_df)
     artist_audio_features_df.to_csv("Lab 2/mean_audio_features.csv")
 
-    similarity_graph = create_similarity_graph(artist_audio_features_df= artist_audio_features_df, similarity= "cosine", out_filename= None) 
+    similarity_graph = create_similarity_graph(artist_audio_features_df= artist_audio_features_df, similarity= "cosine", out_filename= "similarity.graphml") 
     #save similarity graph to file
     g_pruned = prune_low_weight_edges(similarity_graph, min_weight=0.5, out_filename="Lab 2/g_pruned.graphml")
 

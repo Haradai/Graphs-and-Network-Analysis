@@ -1,6 +1,25 @@
 import networkx as nx
 import networkx as nx
 import csv
+import sys
+import pandas as pd
+
+#Additional functions
+
+def find_max_num(g: nx.Graph):
+
+    max_size = 0
+
+    for min_size_clique in range(2, len(g.nodes)+1):
+        cliques = list(nx.find_cliques(g))
+        num_cliques = sum(1 for clique in cliques if len(clique) >= min_size_clique)
+
+        if num_cliques >= 2:
+            max_size = min_size_clique
+
+    return max_size
+
+#Lab functions
 
 def num_common_nodes(*args):
     """
@@ -113,13 +132,13 @@ if __name__ == '__main__':
     #QUESTION 1
     gB = nx.read_graphml("Lab 1/g_gB.graphml")
     hB = nx.read_graphml("Lab 1/g_hB.graphml")
-    #fB = nx.read_graphml("Lab 1/g_fB.graphml")
-
+    fB = nx.read_graphml("Lab 1/g_fB.graphml")
+   
     common_nodes_hB = num_common_nodes(gB,hB)
     print("Common nodes (gB and hB):", common_nodes_hB)
 
-    #common_nodes_fB= num_common_nodes(gB,fB)
-    #print("Common nodes (gB and fB):", common_nodes_fB)
+    common_nodes_fB= num_common_nodes(gB,fB)
+    print("Common nodes (gB and fB):", common_nodes_fB)
 
     #QUESTION 2
     gB_prime = nx.read_graphml("Lab 2/g_gB_prime.graphml")
@@ -127,16 +146,20 @@ if __name__ == '__main__':
 
     degree = get_k_most_central(gB_prime, "degree", 25)
     betweeness = get_k_most_central(gB_prime, "betweenness", 25)
-    common_elements = set(degree).intersection(betweeness)
 
-    print("Common nodes using different centralities:",len(common_elements))
+    common_elements = set(degree).intersection(betweeness)
+    print("Common nodes using different centralities:", len(common_elements))
 
     #QUESTION 3
-    cliques_gB, nodes_gB = find_cliques(gB_prime, 3)
-    print("Number of cliques in gB:",len(cliques_gB), ", min_size_clique: 3")
 
-    cliques_gD, nodes_gD = find_cliques(gD_prime, 10)
-    print("Number of cliques in gD:",len(cliques_gB), ", min_size_clique: 10")
+    min_size_clique_gB = find_max_num(gB_prime)
+    min_size_clique_gD = find_max_num(gD_prime)
+
+    cliques_gB, nodes_gB = find_cliques(gB_prime, min_size_clique_gB)
+    print("Number of cliques in gB:", len(cliques_gB), ", Unique Nodes", len(nodes_gB))
+
+    cliques_gD, nodes_gD = find_cliques(gD_prime, min_size_clique_gD)
+    print("Number of cliques in gD:", len(cliques_gD), ", Unique nodes:", len(nodes_gD))
 
     common_nodes = set(nodes_gB).intersection(set(nodes_gD))
     num_common_nodes = len(common_nodes)
@@ -146,7 +169,8 @@ if __name__ == '__main__':
     largest_clique_gD = max(cliques_gD, key=len)
     characteristics = []
     
-    print(largest_clique_gD)
+    #print(largest_clique_gD)
+
     with open("Lab 2/mean_audio_features.csv", "r") as csvfile:
         features = csv.DictReader(csvfile)
     
@@ -156,7 +180,9 @@ if __name__ == '__main__':
             if artist_id in largest_clique_gD:
                 characteristics.append(row)
 
-    print(characteristics)
+    df = pd.DataFrame(characteristics)
+    df.to_csv("characteristics.csv", index=False)
+    #print(df)
 
     #QUESTION 5
     gD = nx.read_graphml("Lab 1/g_gD.graphml")
@@ -173,6 +199,7 @@ if __name__ == '__main__':
     print("Modularity:", gD_modularity)
 
     #QUESTION 6
+    #Question (a)
 
     num_artists_gB = len(gB.nodes())
     num_artists_gD = len(gD.nodes())
@@ -181,10 +208,71 @@ if __name__ == '__main__':
 
     minimum_cost_gB = num_artists_gB * cost_per_artist
     minimum_cost_gD = num_artists_gD * cost_per_artist
-
+    print("Artists in gB:", num_artists_gB)
+    print("Artists in gD:", num_artists_gD)
     print("Minimum cost for gB:", minimum_cost_gB, "euros")
     print("Minimum cost for gD:", minimum_cost_gD, "euros")
 
-    #TODO: Second part
+    # Question (b)
+   
+    gB_characteristics = []
+    gD_characteristics = []
+
+    with open("Lab 2/mean_audio_features.csv", "r") as csvfile:
+        features = csv.DictReader(csvfile)
+
+        for row in features:
+            artist_id = row["Artist_id"]
+
+            if artist_id in gB.nodes():
+                gB_characteristics.append(row)
+
+    df_gB = pd.DataFrame(gB_characteristics)
+    df_gB_sorted = df_gB.sort_values(by=['Popularity', 'Danceablility'], ascending=[False, False])
+
+    # Select the top 4 artists from gB
+    selected_artists_gB = df_gB_sorted.head(4)
+
+    print("Selected artists from gB':")
+    print(selected_artists_gB['Artist'])
+
+    with open("Lab 2/mean_audio_features.csv", "r") as csvfile:
+        features = csv.DictReader(csvfile)
+
+        for row in features:
+            artist_id = row["Artist_id"]
+
+            if artist_id in gD.nodes():
+                gD_characteristics.append(row)
+
+    df_gD = pd.DataFrame(gD_characteristics)
+    df_gD_sorted = df_gD.sort_values(by=['Popularity', 'Danceablility'], ascending=[False, False])
+
+    # Select the top 4 artists from gD
+    selected_artists_gD = df_gD_sorted.head(4)
+
+    print("Selected artists from gD':")
+    print(selected_artists_gD['Artist'])
+
+
     #QUESTION 7
+    
+    start_artist = "3ZooCJzNMTLpmJaIRUEorI" #Young Dro
+    target_artist = "6z1cicLMt9XArxN10q7m8a" #Travis Porter
+
+    # Perform breadth-first search
+    path = nx.shortest_path(gB, start_artist, target_artist)
+    hops = len(path) - 1
+
+    # Print the minimum number of hops and the artists to listen to
+    print("Minimum number of hops:", hops)
+    print("Artists to listen to:")
+    for i in range(hops):
+        print(path[i])
+    
+
+
+
+
+
 
