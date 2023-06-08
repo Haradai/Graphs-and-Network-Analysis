@@ -49,6 +49,7 @@ def plot_degree_distribution(degree_dict: dict, normalized: bool = False, loglog
     plt.title('Degree Distribution')
     plt.show()
 
+
 def plot_audio_features(csv_file, artist1_id, artist2_id):
     """
     Plot a figure comparing the mean audio features of two different artists.
@@ -98,38 +99,33 @@ def plot_audio_features(csv_file, artist1_id, artist2_id):
     plt.savefig("plot.png")
    
 
-def plot_similarity_heatmap(csv_file, similarity: str, out_filename: str = None) -> None:
+def plot_similarity_heatmap(artist_audio_features_df: pd.DataFrame, similarity: str, out_filename: str = None) -> None:
     """
     Plot a heatmap of the similarity between artists.
-
-    :param csv_file: Path to the CSV file containing the mean audio features of artists.
-    :param similarity: String with similarity measure to use.
-    :param out_filename: Name of the file to save the plot. If None, the plot is not saved.
+    
+    :param artist_audio_features_df: dataframe with mean audio features of artists.
+    :param similarity: string with similarity measure to use.
+    :param out_filename: name of the file to save the plot. If None, the plot is not saved.
     """
-    # Load data from CSV
-    artist_audio_features_df = pd.read_csv(csv_file)
-
-    # Drop NaN values and unnecessary columns
-    artist_audio_features_df = artist_audio_features_df.dropna()
-    artist_audio_features_df = artist_audio_features_df.drop(['Artist', 'Artist_id'], axis=1)
-
-    # Compute similarity matrix
-    similarity_matrix = artist_audio_features_df.iloc[:, 1:].corr(method=similarity)
-
-    # Plot heatmap using Plotly
-    fig = px.imshow(similarity_matrix.values,
-                    x=artist_audio_features_df.columns[1:],
-                    y=artist_audio_features_df.columns[1:],
-                    labels=dict(color="Similarity"),
-                    color_continuous_scale='RdBu')
-
-    fig.update_layout(
-        title=f"Artist Similarity Heatmap ({similarity})",
-        xaxis_title="Artists",
-        yaxis_title="Artists"
-    )
-
-    fig.show()
+    
+    features = artist_audio_features_df.drop(columns=['Artist_id', 'Artist'])
+    similarity_matrix = cosine_similarity(features) if similarity == 'cosine' else features.corr(method=similarity)
+    
+    # Plot the heatmap
+    sns.set(font_scale=1.2)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(similarity_matrix, annot=False, cmap='coolwarm', cbar=True, xticklabels=artist_audio_features_df['Artist'], yticklabels=artist_audio_features_df['Artist'])
+    plt.title(f'Similarity Heatmap ({similarity.capitalize()})')
+    plt.xlabel('Artists')
+    plt.ylabel('Artists')
+    plt.xticks(rotation=90, ha='right', fontsize=0.5)
+    plt.yticks(rotation=0, fontsize=0.5)
+    
+    # Save or display the plot
+    if out_filename:
+        plt.savefig(out_filename, bbox_inches='tight')
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -139,21 +135,13 @@ if __name__ == "__main__":
 
     dd_gB_prime = lab3.get_degree_distribution(gB_prime)
     dd_gD_prime = lab3.get_degree_distribution(gD_prime)
-    """
+
+    #Question 1
+
     plot_degree_distribution(dd_gB_prime, normalized=False, loglog=True)
     plot_degree_distribution(dd_gD_prime, normalized=False, loglog=True)
-
-
     
-
-    #TODO: Find least similar artist
-    plot_audio_features("Lab 2/mean_audio_features.csv", artist1_id = "3TVXtAsR1Inumwj472S9r4", artist2_id= "3vDUJHQtqT3jFRZ2ECXDTi")
-    
-    #TODO: Also needs to be fixed
-    plot_similarity_heatmap("Lab 2/mean_audio_features.csv", similarity="kendall", out_filename="heatmap.png")
-    """
-    
-   # Load the graph
+   #   Question 2 and 3
     gB = nx.read_graphml("Lab 1/g_gB.graphml")
 
     df = pd.read_csv("Lab 2/mean_audio_features.csv")
@@ -168,10 +156,25 @@ if __name__ == "__main__":
 
     # Get the index of the most similar artist
     second_most_similar_index = np.argsort(similarities, axis=None)[-2]
-
+    less_similar_index = np.argsort(similarities, axis=None)[0]
+   
     # Retrieve the information of the second most similar artist
     second_most_similar_artist = df_gB.iloc[second_most_similar_index]['Artist']
+    less_similar_artist = df_gB.iloc[less_similar_index]['Artist']
 
     print("The most similar artist to Drake is:", second_most_similar_artist)
+    print("The less similar artist to Drake is:", less_similar_artist)
 
+    # Most similar
     plot_audio_features("Lab 2/mean_audio_features.csv", artist1_id = "3TVXtAsR1Inumwj472S9r4", artist2_id= "1RyvyyTE3xzB2ZywiAwp0i")
+
+    # Least siilar
+    plot_audio_features("Lab 2/mean_audio_features.csv", artist1_id = "3TVXtAsR1Inumwj472S9r4", artist2_id= "1iJdyDcY98X3GMnUesl7tf")
+   
+    artist_audio_features_df = pd.read_csv("Lab 2/mean_audio_features.csv")
+    artist_audio_features_df = artist_audio_features_df[:200] 
+
+    # Question 4
+    plot_similarity_heatmap(artist_audio_features_df, similarity="cosine", out_filename="heatmap.png")
+
+    
