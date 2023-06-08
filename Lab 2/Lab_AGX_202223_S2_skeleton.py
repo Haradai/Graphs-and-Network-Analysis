@@ -48,6 +48,8 @@ def prune_low_degree_nodes(g: nx.Graph, min_degree: int, out_filename: str) -> n
 
     return pruned_graph
 
+import networkx as nx
+import numpy as np
 
 def prune_low_weight_edges(g: nx.Graph, min_weight=None, min_percentile=None, out_filename: str = None) -> nx.Graph:
     """
@@ -58,7 +60,6 @@ def prune_low_weight_edges(g: nx.Graph, min_weight=None, min_percentile=None, ou
     :param min_percentile: lower bound percentile for the weight.
     :param out_filename: name of the file that will be saved.
     :return: a pruned networkx graph.
-
     """
     if min_weight is not None and min_percentile is not None:
         raise ValueError("Problem detected: Too many arguments. Only one of min_weight or min_percentile should be specified.")
@@ -72,14 +73,16 @@ def prune_low_weight_edges(g: nx.Graph, min_weight=None, min_percentile=None, ou
     if min_weight is not None:
         weight_threshold = min_weight
     else:
-        weight_threshold = nx.percentile_weighted(g, min_percentile)
+        # Calculate the percentile threshold
+        edge_weights = [data['weight'] for _, _, data in pruned_graph.edges(data=True)]
+        weight_threshold = np.percentile(edge_weights, min_percentile)
 
     # Edges with weight < threshold
     low_weight_edges = [(u, v) for u, v, weight in pruned_graph.edges(data="weight") if weight < weight_threshold]
     pruned_graph.remove_edges_from(low_weight_edges)
 
     # Remove zero-degree nodes
-    zero_degree_nodes = [node for node, degree in pruned_graph.degree if degree == 0]
+    zero_degree_nodes = [node for node, degree in pruned_graph.degree() if degree == 0]
     pruned_graph.remove_nodes_from(zero_degree_nodes)
 
     # Save the pruned graph to a file if out_filename is specified
@@ -166,8 +169,8 @@ if __name__ == "__main__":
     similarity_graph_gD = create_similarity_graph(artist_audio_features_df= artists_gD_df, similarity= "cosine") 
 
     #save similarity graph to file
-    gB_pruned = prune_low_weight_edges(similarity_graph_gB, min_weight=0, out_filename="Lab 2/gB_pruned.graphml")
-    gD_pruned = prune_low_weight_edges(similarity_graph_gD, min_weight=0, out_filename="Lab 2/gD_pruned.graphml")
+    gB_pruned = prune_low_weight_edges(similarity_graph_gB, min_percentile=98, out_filename="Lab 2/gB_pruned.graphml")
+    gD_pruned = prune_low_weight_edges(similarity_graph_gD, min_percentile=90, out_filename="Lab 2/gD_pruned.graphml")
       
     gB_prime_order = gB_prime.order()
     gB_prime_size = gB_prime.size()
@@ -197,7 +200,30 @@ if __name__ == "__main__":
     print("Order:", gD_pruned_order)
     print("Size:", gD_pruned_size)
 
-    print("Order and Size of the Undirected Graphs:")
-    print("g'B: Order =", gB_prime_order, " Size =", gB_prime_size)
-    print("g'D: Order =", gD_prime_order, " Size =", gD_prime_size)
+    import networkx as nx
+
+    num_components_gB_prime = nx.number_connected_components(gB_prime)
+    num_components_gD_prime = nx.number_connected_components(gD_prime)
+    
+    # Print the result
+    print("Number of connected components in gB':", num_components_gB_prime)
+    print("Number of connected components in gD':", num_components_gD_prime)
+
+    # Calculate the size of the largest connected component in g'B
+    largest_cc_size_gB = max(len(cc) for cc in nx.connected_components(gB_prime))
+
+    # Calculate the size of the largest connected component in g'D
+    largest_cc_size_gD = max(len(cc) for cc in nx.connected_components(gD_prime))
+
+    print(largest_cc_size_gB)
+    print(largest_cc_size_gD)
+    
+    # Compare the sizes of the largest connected components
+    if largest_cc_size_gB > largest_cc_size_gD:
+        print("The largest connected component in g'B is bigger.")
+    elif largest_cc_size_gB < largest_cc_size_gD:
+        print("The largest connected component in g'D is bigger.")
+    else:
+        print("The largest connected components in g'B and g'D have the same size.")
+
 
