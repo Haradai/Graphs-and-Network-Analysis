@@ -103,7 +103,6 @@ def compute_mean_audio_features(tracks_df: pd.DataFrame) -> pd.DataFrame:
 
     return artist_df
 
-#TODO: Check function!
 
 def create_similarity_graph(artist_audio_features_df: pd.DataFrame, similarity: str, out_filename: str = None) -> nx.Graph:
     """
@@ -151,25 +150,52 @@ if __name__ == "__main__":
 
     gB_prime = retrieve_bidirectional_edges(gB, out_filename="Lab 2/g_gB_prime.graphml")
     gD_prime = retrieve_bidirectional_edges(gD, out_filename="Lab 2/g_gD_prime.graphml")
-    
+
     tracks_df = pd.read_csv('Lab 1/D.csv')
-    artist_audio_features_df = compute_mean_audio_features(tracks_df)
-    artist_audio_features_df.to_csv("Lab 2/mean_audio_features.csv")
 
-    similarity_graph = create_similarity_graph(artist_audio_features_df= artist_audio_features_df, similarity= "cosine", out_filename= "similarity.graphml") 
+    artists_gB_df = tracks_df[tracks_df["Artist_id"].isin(gB.nodes)]
+    artists_gD_df = tracks_df[tracks_df["Artist_id"].isin(gD.nodes)]
+
+    artists_gB_df = compute_mean_audio_features(artists_gB_df)
+    artists_gD_df = compute_mean_audio_features(artists_gD_df)
+
+    artists_gB_df.to_csv('Lab 2/artists_gB.csv', index=False)
+    artists_gD_df.to_csv('Lab 2/artists_gD.csv', index=False)
+
+    similarity_graph_gB = create_similarity_graph(artist_audio_features_df= artists_gB_df, similarity= "cosine") 
+    similarity_graph_gD = create_similarity_graph(artist_audio_features_df= artists_gD_df, similarity= "cosine") 
+
     #save similarity graph to file
-    g_pruned = prune_low_weight_edges(similarity_graph, min_weight=0.5, out_filename="Lab 2/g_pruned.graphml")
-
+    gB_pruned = prune_low_weight_edges(similarity_graph_gB, min_weight=0, out_filename="Lab 2/gB_pruned.graphml")
+    gD_pruned = prune_low_weight_edges(similarity_graph_gD, min_weight=0, out_filename="Lab 2/gD_pruned.graphml")
+      
     gB_prime_order = gB_prime.order()
     gB_prime_size = gB_prime.size()
 
     gD_prime_order = gD_prime.order()
     gD_prime_size = gD_prime.size()
 
+    gB_pruned_order = gB_pruned.order()
+    gB_pruned_size = gB_pruned.size()
 
-    print("Order and Size of the Undirected Graphs:")
-    print("g'B: Order =", gB_prime_order, " Size =", gB_prime_size)
-    print("g'D: Order =", gD_prime_order, " Size =", gD_prime_size)
+    gD_pruned_order = gD_pruned.order()
+    gD_pruned_size = gD_pruned.size()
+
+    print("g'B:")
+    print("Order:", gB_prime_order)
+    print("Size:", gB_prime_size)
+
+    print("g'D:")
+    print("Order:", gD_prime_order)
+    print("Size:", gD_prime_size)
+
+    print("gwB:")
+    print("Order:", gB_pruned_order)
+    print("Size:", gB_pruned_size)
+
+    print("gwD:")
+    print("Order:", gD_pruned_order)
+    print("Size:", gD_pruned_size)
 
 
 
