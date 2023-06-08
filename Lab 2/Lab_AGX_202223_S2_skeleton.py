@@ -170,8 +170,3 @@ if __name__ == "__main__":
     print("Order and Size of the Undirected Graphs:")
     print("g'B: Order =", gB_prime_order, " Size =", gB_prime_size)
     print("g'D: Order =", gD_prime_order, " Size =", gD_prime_size)
-
-
-
-
-

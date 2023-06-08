@@ -5,6 +5,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+from tqdm import tqdm
 
 # ------- IMPLEMENT HERE ANY AUXILIARY FUNCTIONS NEEDED ------- #
 def print_graf_measures(g):
@@ -48,10 +49,10 @@ def crawler(seed: str, max_nodes_to_crawl: int, strategy: str = "BFS", out_filen
     tocrawl_aux = []
     
     #cnt = 0
-    while len(G.nodes()) < max_nodes_to_crawl:
+    for n in tqdm(range(max_nodes_to_crawl)):
         #cnt += 1
         #sleep one second to be polite to the spotify API.
-        time.sleep(1)
+        time.sleep(0.1)
         #print(tocrawl_aux)
         
         #first crawl
@@ -106,11 +107,8 @@ def get_track_data(graphs: list, out_filename: str) -> pd.DataFrame:
     data = []
     seen_artist_ids = set()
     for graph in graphs:
-        for artist_id,out_degree in graph.out_degree():
-
-            #to not to repeat artists we check if we have already seen it
-            #also check if the artist was discovered or crawled. If wasn't crawled oud_degree <1 then just ignore it
-            if artist_id  in seen_artist_ids and out_degree<1:
+        for artist_id in tqdm(graph.nodes):
+            if artist_id  in seen_artist_ids:
                 continue #go to next id
             
             artist = sp.artist(artist_id)
@@ -120,6 +118,7 @@ def get_track_data(graphs: list, out_filename: str) -> pd.DataFrame:
 
             for track in  top_tracks["tracks"]:
                 track_info = sp.audio_features(track["id"])
+                time.sleep(0.5)
                 data.append({
                             
                         #Artist data
@@ -161,8 +160,8 @@ def get_track_data(graphs: list, out_filename: str) -> pd.DataFrame:
 
 if __name__ == "__main__":
     # ------- IMPLEMENT HERE THE MAIN FOR THIS SESSION ------- #
-    CLIENT_ID = "d010f6f0d59d48f6ac33d44e235ac008"
-    CLIENT_SECRET = "08b56260df6d41ec8ee872a39997fc97"
+    CLIENT_ID = "421a05c9619c4faaa5306c36a0bc48ca"
+    CLIENT_SECRET = "c89d362355544ea597cd918da2df93b5"
     auth_manager = SpotifyClientCredentials(
     client_id=CLIENT_ID ,
     client_secret=CLIENT_SECRET)
@@ -196,7 +195,7 @@ if __name__ == "__main__":
     plt.title("hB French Montana 200 related BFS")
     plt.show()
     print_graf_measures(hB)
-    
+
     print("(e) A graph of related artists starting with the last crawled artist from gD and exploring 200 artists with BFS (we will call this graph fB).")
     fB, last_cralwed = crawler(last_cralwed, max_nodes_to_crawl=200, strategy= "BFS", out_filename= "g_fB.graphml",return_last_cr=True)
     nx.draw(fB, with_labels=False,node_size=5)
